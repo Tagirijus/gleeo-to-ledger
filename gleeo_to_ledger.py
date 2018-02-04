@@ -1,5 +1,7 @@
 import argparse
+import csv
 import datetime
+import os
 
 
 ARGS = argparse.ArgumentParser(
@@ -11,7 +13,7 @@ ARGS = argparse.ArgumentParser(
 ARGS.add_argument(
     'file',
     nargs='?',
-    default=None,
+    default='None',
     help='The input .csv file.'
 )
 
@@ -87,62 +89,81 @@ LED_C = ROW_TASK
 LED_D = ROW_DETAILS
 
 
-def csv_to_ledger(data=None):
-    """Output the input CSV as ledger-cli format data."""
-    pass
+def csv_to_ledger(data=None, superacc='All'):
+    """Output the input CSV object as ledger-cli format data."""
+    if type(data) is not list:
+        print('Attention: no data given in csv_to_ledger()!')
+        return ''
 
-
-# big loop for each file
-for single_file in csv_files:
-
-    # load the file
-    print 'Loading \'' + single_file[single_file.rfind('/') + 1:] + '\' ...'
-    f = open(single_file, 'r')
-    origin_raw = f.read().splitlines()
-    if not first_line:
-        origin_raw = origin_raw[1:]
-    f.close()
-
-    # generate the master variable
-    origin = []
-    for x in origin_raw:
-        origin.append(x.split(seperator))
-
-    # convert the entries to ledger format
-    print 'Converting to ledger format ...'
     final_output = ''
-    for y, x in enumerate(origin):
+    for index, row in enumerate(data[1:]):
+
+        tmp_time_format_start = '{} {}'.format(
+            row[ROW_START_DATE],
+            row[ROW_START_TIME]
+        )
+
+        tmp_time_format_end = '{} {}'.format(
+            row[ROW_END_DATE],
+            row[ROW_END_TIME]
+        )
+
+        # reformat the input time into a new string with datetime,
+        # to get the correct dates and time, which have to be valid
         tmp_start = datetime.datetime.strptime(
-            x[row_start_date] + ' ' + x[row_start_time], '%Y-%m-%d %H:%M').strftime('%Y/%m/%d %H:%M:00')
+            tmp_time_format_start, '%Y-%m-%d %H:%M'
+        ).strftime('%Y/%m/%d %H:%M:00')
+
         tmp_ende = datetime.datetime.strptime(
-            x[row_end_date] + ' ' + x[row_end_time], '%Y-%m-%d %H:%M').strftime('%Y/%m/%d %H:%M:00')
-        tmp_a = x[LED_A] if x[LED_A] else x[LED_B] if x[LED_B] else 'Account'
-        tmp_b = ':' + x[LED_B] if (x[LED_B] and x[LED_A]) else ''
-        tmp_c = ':' + x[LED_C] if x[LED_C] else ''
-        tmp_d = ':' + x[LED_D] if x[LED_D] else ''
-        final_output += 'i ' + tmp_start + ' ' + superacc + \
-            ':' + tmp_a + tmp_b + tmp_c + tmp_d + '\n'
-        final_output += 'o ' + tmp_ende
-        if not y == len(origin) - 1:
+            tmp_time_format_end, '%Y-%m-%d %H:%M'
+        ).strftime('%Y/%m/%d %H:%M:00')
+
+        tmp_a = row[LED_A] if row[LED_A] else row[LED_B] if row[LED_B] else 'Account'
+        tmp_b = ':' + row[LED_B] if (row[LED_B] and row[LED_A]) else ''
+        tmp_c = ':' + row[LED_C] if row[LED_C] else ''
+        tmp_d = ':' + row[LED_D] if row[LED_D] else ''
+
+        final_output += 'i {} {}:{}{}{}{}\no {}'.format(
+            tmp_start, superacc, tmp_a, tmp_b, tmp_c, tmp_d, tmp_ende
+        )
+
+        if index != len(data) - 1:
             final_output += '\n\n'
 
-    if append_it:
-        # appending output to archive_file
-        print 'Appending ...'
-        f = open(archive_file, 'a')
-        f.write('\n\n' + final_output)
-        f.close()
-        print 'Appended to \'' + archive_file + '\''
-        print 'Deleting appended original data ...'
-        f = open(single_file[0:single_file.rfind('.')] + '.journal', 'w')
-        f.write('')
-        f.close()
+    return final_output.strip()
+
+
+if __name__ == '__main__':
+    if not os.path.isfile(ARGS.file):
+        print('No valid file.')
+        exit()
+
+    # the file loading here
+    with open(ARGS.file, 'r') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=ARGS.seperator, quotechar='"')
+        data = []
+        for row in spamreader:
+            data.append(row)
+
+    # the conversion here
+    converted_data = csv_to_ledger(data=data, superacc=ARGS.super_account)
+
+    # output file exists and not overwrite and not append
+    if not ARGS.force and not ARGS.append and os.path.isfile(ARGS.output):
+        print('"{}" does alread exists. Use -F or --force to overwrite it.'.format(
+            ARGS.output
+        ))
+        exit()
+
+    # append it
+    if ARGS.append:
+        with open(ARGS.output, 'a') as file:
+            file.write('\n\n')
+            file.write(converted_data)
+            print('Appended to "{}"!'.format(ARGS.output))
+
+    # write or even overwrite it without append
     else:
-        # saving output to file
-        print 'Saving ...'
-        output_file = single_file[0:single_file.rfind('.')] + '.journal'
-        output_file_name = output_file[output_file.rfind('/') + 1:]
-        f = open(output_file, 'w')
-        f.write(final_output)
-        f.close()
-        print 'Saved to \'' + output_file_name + '\''
+        with open(ARGS.output, 'w') as file:
+            file.write(converted_data)
+            print('Written to "{}"!'.format(ARGS.output))
