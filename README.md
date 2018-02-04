@@ -7,3 +7,7 @@ This is a handy app for tracking the time in Android. It's a free app without ad
 # Usage
 
 Gleeo Timetracker can export the timetracking data in CSV format. You just need to input this `*.csv` file and tite the output file and the programm will convert all the data into the ledger format. Start the program with `-h` or `--help` for more information.
+
+# ToDo
+
+- Maybe making the rows dynamic, instead of hard-coded.
