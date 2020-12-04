@@ -63,30 +63,13 @@ ARGS.add_argument(
 ARGS = ARGS.parse_args()
 
 
-# index of the column for the format of the Gleeo Time Tracker CSV
-ROW_DOMAIN = 0
-ROW_PROJECT = 1
-ROW_TASK = 2
-ROW_DETAILS = 3
-ROW_START_DATE = 4
-ROW_START_TIME = 5
-ROW_END_DATE = 6
-ROW_END_TIME = 7
-ROW_DURATION = 8
-ROW_DURATION_DEC = 9
-ROW_PROJECT_XTRA1 = 10
-ROW_PROJECT_XTRA2 = 11
-ROW_TASK_XTRA1 = 12
-ROW_TASK_XTRA2 = 13
-
-
-# format of the ledger output - the indexes of the CSV columns
+# format of the ledger output - the name of the CSV columns
 # basically it generates the accounts of the ledger-cli format like:
 #       ARGS.super_account:LED_A:LED_B:LED_C:LED_D
-LED_A = ROW_DOMAIN
-LED_B = ROW_PROJECT
-LED_C = ROW_TASK
-LED_D = ROW_DETAILS
+LED_A = 'Domain'
+LED_B = 'Project'
+LED_C = 'Task'
+LED_D = 'Details'
 
 
 def csv_to_ledger(data=None, superacc='All'):
@@ -96,16 +79,16 @@ def csv_to_ledger(data=None, superacc='All'):
         return ''
 
     final_output = ''
-    for index, row in enumerate(data[1:]):
+    for index, entry in enumerate(data[1:]):
 
         tmp_time_format_start = '{} {}'.format(
-            row[ROW_START_DATE],
-            row[ROW_START_TIME]
+            entry['Start-Date'],
+            entry['Start-Time']
         )
 
         tmp_time_format_end = '{} {}'.format(
-            row[ROW_END_DATE],
-            row[ROW_END_TIME]
+            entry['End-Date'],
+            entry['End-Time']
         )
 
         # reformat the input time into a new string with datetime,
@@ -118,10 +101,14 @@ def csv_to_ledger(data=None, superacc='All'):
             tmp_time_format_end, '%Y-%m-%d %H:%M'
         ).strftime('%Y/%m/%d %H:%M:00')
 
-        tmp_a = row[LED_A] if row[LED_A] else row[LED_B] if row[LED_B] else 'Account'
-        tmp_b = ':' + row[LED_B] if (row[LED_B] and row[LED_A]) else ''
-        tmp_c = ':' + row[LED_C] if row[LED_C] else ''
-        tmp_d = ':' + row[LED_D] if row[LED_D] else ''
+        tmp_a = (
+            entry[LED_A] if entry[LED_A]
+            else entry[LED_B] if entry[LED_B]
+            else 'Account'
+        )
+        tmp_b = ':' + entry[LED_B] if (entry[LED_B] and entry[LED_A]) else ''
+        tmp_c = ':' + entry[LED_C] if entry[LED_C] else ''
+        tmp_d = ':' + entry[LED_D] if entry[LED_D] else ''
 
         final_output += 'i {} {}:{}{}{}{}\no {}'.format(
             tmp_start, superacc, tmp_a, tmp_b, tmp_c, tmp_d, tmp_ende
@@ -140,10 +127,10 @@ if __name__ == '__main__':
 
     # the file loading here
     with open(ARGS.file, 'r') as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=ARGS.seperator, quotechar='"')
+        spamreader = csv.DictReader(csvfile, delimiter=ARGS.seperator, quotechar='"')
         data = []
-        for row in spamreader:
-            data.append(row)
+        for x in spamreader:
+            data.append(x)
 
     # the conversion here
     converted_data = csv_to_ledger(data=data, superacc=ARGS.super_account)
