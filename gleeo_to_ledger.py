@@ -79,7 +79,7 @@ def csv_to_ledger(data=None, superacc='All'):
         return ''
 
     final_output = ''
-    for index, entry in enumerate(data[1:]):
+    for index, entry in enumerate(data):
 
         tmp_time_format_start = '{} {}'.format(
             entry['Start-Date'],
