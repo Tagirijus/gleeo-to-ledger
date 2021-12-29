@@ -71,6 +71,21 @@ LED_B = 'Project'
 LED_C = 'Task'
 LED_D = 'Details'
 
+# Since a new version of Gleeo Time Tracker
+# from 2021-12-29 the CSV Export format changed
+# a tiny bit. Thus I made some columns variable,
+# in case it will change again and for easier
+# updating changed formats, etc.
+# It is possible to have date and time in seperate
+# columns. This can be activated here. No settings
+# file for now; sorry, no time.
+LED_SEPERATE_TIME_COLUMNS = False
+LED_START = 'Start'
+LED_END = 'End'
+LED_START_DATE = 'Start-Date'
+LED_END_DATE = 'End-Date'
+LED_START_TIME = 'Start-Time'
+LED_END_TIME = 'End-Time'
 
 def csv_to_ledger(data=None, superacc='All'):
     """Output the input CSV object as ledger-cli format data."""
@@ -81,15 +96,20 @@ def csv_to_ledger(data=None, superacc='All'):
     final_output = ''
     for index, entry in enumerate(data):
 
-        tmp_time_format_start = '{} {}'.format(
-            entry['Start-Date'],
-            entry['Start-Time']
-        )
+        if LED_SEPERATE_TIME_COLUMNS:
+            tmp_time_format_start = '{} {}'.format(
+                entry[LED_START_DATE],
+                entry[LED_START_TIME]
+            )
 
-        tmp_time_format_end = '{} {}'.format(
-            entry['End-Date'],
-            entry['End-Time']
-        )
+            tmp_time_format_end = '{} {}'.format(
+                entry[LED_END_DATE],
+                entry[LED_END_TIME]
+            )
+        else:
+            tmp_time_format_start = entry[LED_START]
+
+            tmp_time_format_end = entry[LED_END]
 
         # reformat the input time into a new string with datetime,
         # to get the correct dates and time, which have to be valid
