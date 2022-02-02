@@ -2,7 +2,7 @@ This is a little program for converting the Gleeo Timetracking data to the ledge
 
 # Gleeo Timetracker
 
-This is a handy app for tracking the time in Android. It's a free app without ads (thanks fpr the dev!). More information [on their website](http://gleeo.com/index.php/de/).
+This is a handy app for tracking the time in Android. It's a free app without ads (thanks to the dev!). More information [on their website](http://gleeo.com).
 
 # Usage
 
